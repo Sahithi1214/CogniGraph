@@ -68,5 +68,23 @@ router.get('/graph', async (req, res) => {
       res.status(500).json({ error: err.message });
     }
   });  
+  router.get('/:topicName/related', async (req, res) => {
+    try {
+      const topicName = decodeURIComponent(req.params.topicName); // Decode spaces
+  
+      const topic = await Topic.findOne({ topicName }).populate('relatedTopics');
+  
+      if (!topic) {
+        return res.status(404).json({ error: 'Topic not found' });
+      }
+  
+      res.json(topic.relatedTopics);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
 module.exports = router;
+
+
+

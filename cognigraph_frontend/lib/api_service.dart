@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  final String baseUrl = "http://localhost:3000/api";
+  static final String baseUrl = "http://localhost:3000/api";
 
-  Future<List<Map<String, dynamic>>> fetchTopics() async {
+  static Future<List<Map<String, dynamic>>> fetchTopics() async {
     final response = await http.get(Uri.parse('$baseUrl/topics'));
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);
@@ -14,7 +14,7 @@ class ApiService {
     }
   }
 
-  Future<void> addTopic(String topicName) async {
+  static Future<void> addTopic(String topicName) async {
     final response = await http.post(
       Uri.parse('$baseUrl/topics'),
       headers: {'Content-Type': 'application/json'},
@@ -25,7 +25,7 @@ class ApiService {
     }
   }
 
-  Future<void> updateTopic(String topicName, double progress, bool isCompleted) async {
+  static Future<void> updateTopic(String topicName, double progress, bool isCompleted) async {
     final response = await http.put(
       Uri.parse('$baseUrl/topics/$topicName'),
       headers: {'Content-Type': 'application/json'},
@@ -86,5 +86,16 @@ class ApiService {
       throw Exception('Error fetching books: $e');
     }
   }
+  // Function to fetch related topics for a given topic name
+Future<List<dynamic>> fetchRelatedTopics(String topicName) async {
+  final response = await http.get(Uri.parse('http://localhost:3000/api/topics/$topicName/related'));
+
+  if (response.statusCode == 200) {
+    // Parse the JSON response
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Failed to load related topics');
+  }
+}
 
 }

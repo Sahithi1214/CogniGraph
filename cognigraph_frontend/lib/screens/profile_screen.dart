@@ -65,7 +65,7 @@ class ProfileScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Add a sample preference
-                userData.addPreference('Flutter');
+                userData.addPreference('Video');
               },
               child: Text('Add Learning Preference'),
             ),

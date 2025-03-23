@@ -17,6 +17,7 @@ class _TextAnalysisScreenState extends State<TextAnalysisScreen> with SingleTick
   List<String> _bookUrls = [];
   late TabController _tabController;
   bool _showResults = false;
+  List<String> _learningPath = [];
 
   @override
   void initState() {
@@ -328,55 +329,90 @@ class _TextAnalysisScreenState extends State<TextAnalysisScreen> with SingleTick
     );
   }
 
-  Widget _buildTopicsTab() {
-    return _topics.isEmpty
-        ? _buildEmptyState('No topics identified')
-        : ListView.builder(
-            itemCount: _topics.length,
-            itemBuilder: (context, index) {
-              return Card(
-                color: Color(0xFF1E1E1E),
-                margin: EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+Widget _buildTopicsTab() {
+  return _topics.isEmpty
+      ? _buildEmptyState('No topics identified')
+      : ListView.builder(
+          itemCount: _topics.length,
+          itemBuilder: (context, index) {
+            return Card(
+              color: Color(0xFF1E1E1E),
+              margin: EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Color(0xFF757575),
+                  child: Text(
+                    '${index + 1}',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
-                elevation: 0,
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Color(0xFF757575),
-                    child: Text(
-                      '${index + 1}',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                title: Text(
+                  _topics[index],
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                  title: Text(
-                    _topics[index],
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Tap to add to your learning path',
-                    style: TextStyle(color: Colors.white60, fontSize: 12),
-                  ),
-                  onTap: () {
-                    // Add topic to learning path logic
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                        '${_topics[index]} added to your learning path',
-                        style: TextStyle(color: Colors.white),
-                        ),
-                        backgroundColor: Color(0xFF424242),
-                      ),
-                    );
-                  },
                 ),
-              );
-            },
-          );
+                subtitle: Text(
+                  'Tap to add to your learning path',
+                  style: TextStyle(color: Colors.white60, fontSize: 12),
+                ),
+                onTap: () {
+                  _addTopicToLearningPath(_topics[index]);
+                  _saveTopicToMongoDB(_topics[index]);
+                },
+              ),
+            );
+          },
+        );
+}
+
+void _addTopicToLearningPath(String topic) {
+  setState(() {
+    _learningPath.add(topic); // Add topic to the local learning path list
+  });
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        '$topic added to your learning path',
+        style: TextStyle(color: Colors.white),
+      ),
+      backgroundColor: Color(0xFF424242),
+    ),
+  );
+}
+
+Future<void> _saveTopicToMongoDB(String topicName) async {
+  try {
+    await ApiService.addTopic(topicName);  // Call the addTopic method to save to MongoDB
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Topic saved to MongoDB',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Color(0xFF424242),
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Failed to save topic to MongoDB',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Color(0xFFd32f2f),
+      ),
+    );
   }
+}
+
+
 
   Widget _buildVideosTab() {
     return _videoUrls.isEmpty

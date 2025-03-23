@@ -6,36 +6,39 @@ class LearningTopic {
   String topicName;
   bool isCompleted;
   double progress;
+  List<String> relatedTopics;
 
   LearningTopic({
     required this.topicName,
     this.isCompleted = false,
     this.progress = 0.0,
+    this.relatedTopics = const [],
   });
 
-  // Factory method to create a LearningTopic from JSON
   factory LearningTopic.fromJson(Map<String, dynamic> json) {
     return LearningTopic(
       topicName: json['topicName'],
       isCompleted: json['isCompleted'] ?? false,
-      progress: (json['progress'] ?? 0).toDouble(),
+      progress: json['progress'] ?? 0,
+      relatedTopics: List<String>.from(json['relatedTopics'] ?? []), // Parse related topics
     );
   }
 
-  // Convert to JSON
   Map<String, dynamic> toJson() {
     return {
       'topicName': topicName,
       'isCompleted': isCompleted,
       'progress': progress,
+      'relatedTopics': relatedTopics, // Save related topics
     };
   }
 }
 
 class UserData extends ChangeNotifier {
-  String userName = "John Doe";
+  String userName = "Sahithi";
   List<String> preferences = [];
   List<LearningTopic> learningTopics = [];
+  List<LearningTopic> recommendedTopics = [];  // To store recommendations
 
   final String baseUrl = "http://localhost:3000/api";
 
@@ -43,7 +46,7 @@ class UserData extends ChangeNotifier {
     fetchTopics();
   }
 
-   // New method to update the username
+  // New method to update the username
   void updateUserName(String newName) {
     userName = newName;
     notifyListeners();
@@ -63,6 +66,7 @@ class UserData extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Fetch topics from the API
   Future<void> fetchTopics() async {
     final response = await http.get(Uri.parse('$baseUrl/topics'));
     if (response.statusCode == 200) {
@@ -74,6 +78,26 @@ class UserData extends ChangeNotifier {
     }
   }
 
+  // Fetch personalized topic recommendations based on user preferences
+  Future<void> fetchRecommendedTopics() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/recommend'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'preferences': preferences,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = json.decode(response.body);
+      recommendedTopics = data.map((e) => LearningTopic.fromJson(e)).toList();
+      notifyListeners();
+    } else {
+      throw Exception('Failed to fetch recommended topics');
+    }
+  }
+
+  // Add a new topic (both locally and via API)
   Future<void> addTopic(String topic) async {
     final newTopic = LearningTopic(topicName: topic);
     learningTopics.add(newTopic);
@@ -90,6 +114,7 @@ class UserData extends ChangeNotifier {
     }
   }
 
+  // Remove a topic (both locally and via API)
   Future<void> removeTopic(String topic) async {
     learningTopics.removeWhere((t) => t.topicName == topic);
     notifyListeners();
@@ -101,6 +126,7 @@ class UserData extends ChangeNotifier {
     }
   }
 
+  // Mark a topic as completed
   Future<void> markCompleted(String topic) async {
     final topicToUpdate = learningTopics.firstWhere((t) => t.topicName == topic);
     topicToUpdate.isCompleted = true;
@@ -110,6 +136,7 @@ class UserData extends ChangeNotifier {
     await updateTopic(topicToUpdate);
   }
 
+  // Update topic progress
   Future<void> updateProgress(String topic, double progress) async {
     final topicToUpdate = learningTopics.firstWhere((t) => t.topicName == topic);
     topicToUpdate.progress = progress;
@@ -118,6 +145,7 @@ class UserData extends ChangeNotifier {
     await updateTopic(topicToUpdate);
   }
 
+  // Update a topic via API
   Future<void> updateTopic(LearningTopic topic) async {
     final response = await http.put(
       Uri.parse('$baseUrl/topics/${topic.topicName}'),
